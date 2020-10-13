@@ -23,9 +23,9 @@ ver = None
 lb = None
 
 var_sess = tk.StringVar()
-var_sess.set("479cde40%2C1616386900%2C50860*91")
+var_sess.set("")
 var_csrf = tk.StringVar()
-var_csrf.set("87977a8b062f49e4ca0fe57c1fb0318c")
+var_csrf.set("")
 var_bvid = tk.StringVar()
 var_bvid.set("BV1uv411q7Mv")
 var_upid = tk.StringVar()
