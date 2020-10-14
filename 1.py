@@ -84,7 +84,6 @@ def get_pic(url, size_x=-1, size_y=-1):
     video_image = Image.open(BytesIO(img_res.content))
     if size_x is not -1 and size_y is not -1:
         video_image_rsz = video_image.resize((size_x, size_y))
-    #video_image_rsz.show()
     return ImageTk.PhotoImage(video_image_rsz)
 
 
