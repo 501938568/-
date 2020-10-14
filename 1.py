@@ -34,27 +34,19 @@ var_progress = tk.StringVar()
 
 
 def get_bili_cookies():
-    try:
-        open('biliCookies.pickle')
-    except FileNotFoundError:
-        browser = webdriver.Firefox(executable_path="D:\GeckoDriver\geckodriver")
-        browser.get("https://passport.bilibili.com/login")
-        while True:
-            sleep(3)
-            while browser.current_url == "https://www.bilibili.com/":
-                bili_cookies = browser.get_cookies()
-                browser.quit()
-                cookies = {}
-                for item in bili_cookies:
-                    cookies[item['name']] = item['value']
-                with open('biliCookies.pickle', 'wb') as new_pickle:
-                    pickle.dump(cookies, new_pickle)
-
-                return cookies['SESSDATA'], cookies['bili_jct']
-    else:
-        with open('biliCookies.pickle', 'rb') as file:
-            data = pickle.load(file)
-        return data['SESSDATA'], data['bili_jct']
+    browser = webdriver.Firefox(executable_path="D:\GeckoDriver\geckodriver")
+    browser.get("https://passport.bilibili.com/login")
+    while True:
+        sleep(3)
+        while browser.current_url == "https://www.bilibili.com/":
+            bili_cookies = browser.get_cookies()
+            browser.quit()
+            cookies = {}
+            for item in bili_cookies:
+                cookies[item['name']] = item['value']
+            with open('biliCookies.pickle', 'wb') as new_pickle:
+                pickle.dump(cookies, new_pickle)
+            return cookies['SESSDATA'], cookies['bili_jct']
 
 
 def get_s_c():
@@ -62,17 +54,29 @@ def get_s_c():
     input_sessdata = var_sess.get()
     input_csrf = var_csrf.get()
     ver = Verify(sessdata=input_sessdata, csrf=input_csrf)
-    try:
-        video.get_favorite_list(bvid='BV1uv411q7Mv', verify=ver)
-    except exceptions.BilibiliApiException as msg:
-        if msg.code == -101:
-            tkinter.messagebox.showwarning(message='信息错误！')
+
+    ret = ver.check()['code']
+    if ret == 0:
+        tkinter.messagebox.showinfo(message='验证成功！')
+    elif ret == -1:
+        tkinter.messagebox.showwarning(message='csrf 校验失败')
+    elif ret == -2:
+        tkinter.messagebox.showwarning(message='SESSDATA值有误')
 
 
 def get_sc_button():
-    sc = get_bili_cookies()
-    var_sess.set(sc[0])
-    var_csrf.set(sc[1])
+    try:
+        open('biliCookies.pickle')
+    except FileNotFoundError:
+        sc = get_bili_cookies()
+        var_sess.set(sc[0])
+        var_csrf.set(sc[1])
+
+    else:
+        with open('biliCookies.pickle', 'rb') as file:
+            data = pickle.load(file)
+            var_sess.set(data['SESSDATA'])
+            var_csrf.set(data['bili_jct'])
 
 
 def get_pic(url, size_x=-1, size_y=-1):
@@ -256,7 +260,10 @@ def b_add_coin():
     except exceptions.BilibiliApiException as msg:
         if msg.code == 34005:
             tkinter.messagebox.showwarning(message='超过投币上限啦~')
-    #todo: 0硬币分支判断
+        if msg.code == -605:
+            tkinter.messagebox.showwarning(message='速度答题成为正式会员')
+        if msg.code == -104:
+            tkinter.messagebox.showwarning(message='硬币不足！')
     else:
         tkinter.messagebox.showinfo(message='已投币 +1')
 
@@ -409,9 +416,11 @@ def main_window():
     entry_bvid = tk.Entry(window, textvariable=var_bvid, font=('Arial', 14))
     entry_bvid.place(x=100, y=200)
 
-    button_c_s = tk.Button(window, text="登录/缓存获取cookie", command=get_sc_button)
+    button_c_s = tk.Button(window, text="获取cookie", command=get_sc_button)
     button_c_s.place(x=350, y=100)
-    button_c_s = tk.Button(window, text="确认sess和crsf", command=get_s_c)
+    button_c_s = tk.Button(window, text="重新登陆", command=get_bili_cookies)
+    button_c_s.place(x=450, y=100)
+    button_c_s = tk.Button(window, text="确认", command=get_s_c)
     button_c_s.place(x=350, y=150)
     button_c_s = tk.Button(window, text="确认视频信息", command=video_confirm)
     button_c_s.place(x=350, y=200)
@@ -433,9 +442,13 @@ def main_window():
     button_c_s = tk.Button(window, text="一键投币", command=lambda: add_coin_all(var_upid.get()))
     button_c_s.place(x=350, y=335)
     button_c_s = tk.Button(window, text="一键收藏", command=lambda: set_fav_list_all(window))
-    button_c_s.place(x=350, y=380)
+    button_c_s.place(x=350, y=370)
     button_c_s = tk.Button(window, text="详细信息...", command=up_confirm)
-    button_c_s.place(x=100, y=350)
+    button_c_s.place(x=100, y=340)
+
+    sep3 = tk.Canvas(window, width=600, height=10)
+    sep3.create_line(0, 15, 600, 15, width=10, fill='#1f1e33')
+    sep3.place(x=0, y=400)
 
     progress = tk.Label(window, textvariable=var_progress, font=("微软雅黑", 14, "bold"),  height=1)
     progress.place(x=20, y=650)
