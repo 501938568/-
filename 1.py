@@ -34,7 +34,8 @@ var_progress = tk.StringVar()
 
 
 def get_bili_cookies():
-    browser = webdriver.Firefox(executable_path="D:\GeckoDriver\geckodriver")
+    browser = webdriver.Firefox(
+        executable_path='D:\GeckoDriver\geckodriver')
     browser.get("https://passport.bilibili.com/login")
     while True:
         sleep(3)
@@ -84,7 +85,9 @@ def get_pic(url, size_x=-1, size_y=-1):
     video_image = Image.open(BytesIO(img_res.content))
     if size_x != -1 and size_y != -1:
         video_image_rsz = video_image.resize((size_x, size_y))
-    return ImageTk.PhotoImage(video_image_rsz)
+        return ImageTk.PhotoImage(video_image_rsz)
+    else:
+        return video_image
 
 
 def up_confirm():
@@ -104,14 +107,14 @@ def up_confirm():
         img_display.place(x=50, y=50)
 
         name_label = tk.Label(info_window, text=up_info['name'],
-                              font=("微软雅黑", 14, "bold"),  height=1)
+                              font=("微软雅黑", 14, "bold"), height=1)
         name_label.place(x=300, y=50)
         sign_label = tk.Label(info_window, text="签名:  " + up_info['sign'],
                               font=("微软雅黑", 12), height=3)
         sign_label.place(x=300, y=100)
 
         label_temp = tk.Label(info_window, text="投稿视频信息: ",
-                              font=("微软雅黑", 20, "bold"),  height=1)
+                              font=("微软雅黑", 20, "bold"), height=1)
         label_temp.place(x=50, y=275)
 
         v_list = user.get_videos(uid=var_upid.get(), verify=ver)
@@ -226,9 +229,9 @@ def b_set_like():
         video.set_like(bvid=var_bvid.get(), status=True, verify=ver)
 
 
-def set_like_all(id):
+def set_like_all(uid):
     try:
-        v_list = user.get_videos(uid=id, verify=ver)
+        v_list = user.get_videos(uid=uid, verify=ver)
     except exceptions.BilibiliException as msg:
         if msg.code == -400 or -10:
             tkinter.messagebox.showwarning(message='up主id错误！')
@@ -250,7 +253,7 @@ def set_like_all(id):
                 window.update()
 
             tkinter.messagebox.showinfo(message='之前已点赞：' + str(is_liked)
-                                        + '      本次点赞：' + str(liked))
+                                                + '      本次点赞：' + str(liked))
 
 
 def b_add_coin():
@@ -267,9 +270,9 @@ def b_add_coin():
         tkinter.messagebox.showinfo(message='已投币 +1')
 
 
-def add_coin_all(id):
+def add_coin_all(uid):
     try:
-        v_list = user.get_videos(uid=id, verify=ver)
+        v_list = user.get_videos(uid=uid, verify=ver)
     except exceptions.BilibiliException as msg:
         if msg.code == -400 or -10:
             tkinter.messagebox.showwarning(message='up主id错误！')
@@ -301,7 +304,7 @@ def add_coin_all(id):
                     window.update()
 
                 tk.messagebox.showinfo(message='本次共投' + str(coin) + '个硬币'
-                                       + '\n' + str(filled) + '之前投满')
+                                               + '\n' + str(filled) + '之前投满')
 
 
 def set_favorite(info_window):
@@ -323,7 +326,7 @@ def del_favorite(info_window):
     display_fav_list(info_window)
 
 
-def display_fav_list(info_window, x=100, y=570, state=0):#state 来判断用于哪个lb
+def display_fav_list(info_window, x=100, y=570, state=0):  # state 来判断用于哪个lb
     global lb
     dic = video.get_favorite_list(bvid=var_bvid.get(), verify=ver)
     lb = tk.Listbox(info_window)
@@ -379,7 +382,8 @@ def set_favorite_all():
 
             sleep(0.3)
             tkinter.messagebox.showinfo(message='收藏成功，' + str(is_favared) +
-                                        '视频之前已收藏过。')
+                                                '视频之前已收藏过。')
+
 
 #  ---------------------------------main window--------------------------------------------------------#
 
@@ -396,16 +400,16 @@ def main_window():
     img_2 = tk.Label(window, image=render_2)
     img_2.place(x=0, y=0)
 
-    label = tk.Label(window, text='sess: ', font=("微软雅黑", 14),  height=1)
+    label = tk.Label(window, text='sess: ', font=("微软雅黑", 14), height=1)
     label.place(x=40, y=95)
-    label = tk.Label(window, text='crsf: ', font=("微软雅黑", 14),  height=1)
+    label = tk.Label(window, text='crsf: ', font=("微软雅黑", 14), height=1)
     label.place(x=40, y=135)
 
     sep1 = tk.Canvas(window, width=600, height=10)
     sep1.create_line(0, 15, 600, 15, width=10, fill='#1f1e33')
     sep1.place(x=0, y=175)
 
-    label = tk.Label(window, text='bv/url: ', font=("微软雅黑", 14),  height=1)
+    label = tk.Label(window, text='bv/url: ', font=("微软雅黑", 14), height=1)
     label.place(x=25, y=200)
 
     entry_sess = tk.Entry(window, textvariable=var_sess, font=('Arial', 14))
@@ -428,10 +432,10 @@ def main_window():
     sep2.create_line(0, 15, 600, 15, width=10, fill='#1f1e33')
     sep2.place(x=0, y=235)
 
-    label_sanlian_all = tk.Label(window, text='全部三连: ', font=("微软雅黑", 14, "bold"),  height=1)
+    label_sanlian_all = tk.Label(window, text='全部三连: ', font=("微软雅黑", 14, "bold"), height=1)
     label_sanlian_all.place(x=160, y=255)
 
-    label = tk.Label(window, text='upid: ', font=("微软雅黑", 14),  height=1)
+    label = tk.Label(window, text='upid: ', font=("微软雅黑", 14), height=1)
     label.place(x=40, y=300)
     entry_upid = tk.Entry(window, textvariable=var_upid, font=('Arial', 14))
     entry_upid.place(x=100, y=300)
@@ -449,10 +453,11 @@ def main_window():
     sep3.create_line(0, 15, 600, 15, width=10, fill='#1f1e33')
     sep3.place(x=0, y=400)
 
-    progress = tk.Label(window, textvariable=var_progress, font=("微软雅黑", 14, "bold"),  height=1)
+    progress = tk.Label(window, textvariable=var_progress, font=("微软雅黑", 14, "bold"), height=1)
     progress.place(x=20, y=650)
 
     window.mainloop()
+
 
 # ------------------------------------------------------------------------------- #
 
