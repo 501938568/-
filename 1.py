@@ -82,7 +82,7 @@ def get_sc_button():
 def get_pic(url, size_x=-1, size_y=-1):
     img_res = req.get(url)
     video_image = Image.open(BytesIO(img_res.content))
-    if size_x is not -1 and size_y is not -1:
+    if size_x != -1 and size_y != -1:
         video_image_rsz = video_image.resize((size_x, size_y))
     return ImageTk.PhotoImage(video_image_rsz)
 
@@ -329,7 +329,7 @@ def display_fav_list(info_window, x=100, y=570, state=0):#state 来判断用于�
     lb = tk.Listbox(info_window)
     for i in range(dic['count']):
         if dic['list'][i]['fav_state'] == 1:
-            if state is 0:
+            if state == 0:
                 lb.insert('end', str(i) + '.' + dic['list'][i]['title'] + '(已收藏)')
             else:
                 lb.insert('end', str(i) + '.' + dic['list'][i]['title'])
