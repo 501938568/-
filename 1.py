@@ -32,7 +32,6 @@ var_upid = tk.StringVar()
 var_upid.set("384521381")
 var_progress = tk.StringVar()
 
-
 def get_bili_cookies():
     browser = webdriver.Firefox(
         executable_path='D:\GeckoDriver\geckodriver')
@@ -216,10 +215,13 @@ def video_confirm():
         info_window.mainloop()
 
 
-def update_progress(cur, total):
-    var_progress.set('处理进度：' + str(cur) + '/' + str(total))
-    if cur == total:
-        var_progress.set('处理完毕！')
+def update_progress(cur, total, msg=-1):
+    if msg == -1:
+        var_progress.set('处理进度：' + str(cur) + '/' + str(total))
+        if cur == total:
+            var_progress.set('处理完毕！')
+    else:
+        var_progresss.set(msg)
 
 
 def b_set_like():
@@ -374,13 +376,18 @@ def set_favorite_all():
                 if video.is_favoured(bvid=bvid, verify=ver):
                     is_favared += 1
                 else:
-                    video.operate_favorite(bvid=bvid, verify=ver,
-                                           add_media_ids=[dic['list'][temp]['id']])
-
-                update_progress(i + 1, len(v_list))
+                    try:
+                        video.operate_favorite(bvid=bvid, verify=ver,
+                                               add_media_ids=[dic['list'][temp]['id']])
+                        update_progress(i + 1, len(v_list))
+                    except exceptions.BilibiliException as msg:
+                        if msg.code == -509:
+                            update_progress(msg='请求频繁，重试中...')
+                            sleep(3)
+                            i -= 1
+                            continue
                 window.update()
-
-            sleep(0.3)
+                sleep(0.3)
             tkinter.messagebox.showinfo(message='收藏成功，' + str(is_favared) +
                                                 '视频之前已收藏过。')
 
