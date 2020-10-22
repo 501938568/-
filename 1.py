@@ -1,8 +1,8 @@
+from global_var import *
 from bilibili_api import video, Verify, exceptions, user
 
-#from tkinter import *
 import tkinter as tk
-from tkinter import scrolledtext
+from tkinter import scrolledtext, filedialog
 import tkinter.messagebox
 
 from PIL import Image, ImageTk
@@ -15,22 +15,6 @@ from time import sleep
 import re
 import pickle
 
-window = tk.Tk()
-window.title('111')
-window.geometry('1000x700')
-
-ver = None
-lb = None
-
-var_sess = tk.StringVar()
-var_sess.set("")
-var_csrf = tk.StringVar()
-var_csrf.set("")
-var_bvid = tk.StringVar()
-var_bvid.set("BV1uv411q7Mv")
-var_upid = tk.StringVar()
-var_upid.set("384521381")
-var_progress = tk.StringVar()
 
 def get_bili_cookies():
     browser = webdriver.Firefox(
@@ -90,6 +74,7 @@ def get_pic(url, size_x=-1, size_y=-1):
 
 
 def up_confirm():
+    global lb
     try:
         up_info = user.get_user_info(uid=var_upid.get(), verify=ver)
     except exceptions.BilibiliException as msg:
@@ -116,15 +101,17 @@ def up_confirm():
                               font=("微软雅黑", 20, "bold"), height=1)
         label_temp.place(x=50, y=275)
 
-        v_list = user.get_videos(uid=var_upid.get(), verify=ver)
+        v_list = user.get_videos_g(uid=var_upid.get(), verify=ver)
         if v_list is None:
             label_temp = tk.Label(info_window, text="该up尚未投稿哦~ ",
                                   font=("微软雅黑", 14), height=1)
             label_temp.place(x=350, y=450)
         else:
             lb = tk.Listbox(info_window, width=40, height=20)
-            for i in range(len(v_list)):
-                lb.insert('end', str(i) + '.' + v_list[i]['title'])
+
+ #todo: 等待修改
+            for i in v_list:
+                lb.insert('end', str(i) + '.' + v_list['title'])
 
             def open_url(event):
                 temp = lb.curselection()[0]
@@ -215,8 +202,8 @@ def video_confirm():
         info_window.mainloop()
 
 
-def update_progress(cur, total, msg=-1):
-    if msg == -1:
+def update_progress(cur, total, msg='normal'):
+    if msg == 'normal':
         var_progress.set('处理进度：' + str(cur) + '/' + str(total))
         if cur == total:
             var_progress.set('处理完毕！')
@@ -353,9 +340,9 @@ def set_fav_list(info_window):
 
 
 def set_fav_list_all(info_window):
-    display_fav_list(info_window, 100, 400, 1)
+    display_fav_list(info_window, 10, 430, 1)
     set_fav = tk.Button(info_window, text='全部收藏在该收藏夹中', command=set_favorite_all)
-    set_fav.place(x=300, y=500)
+    set_fav.place(x=10, y=620)
 
 
 def set_favorite_all():
@@ -382,7 +369,7 @@ def set_favorite_all():
                         update_progress(i + 1, len(v_list))
                     except exceptions.BilibiliException as msg:
                         if msg.code == -509:
-                            update_progress(msg='请求频繁，重试中...')
+                            update_progress(-1, -1, msg='请求频繁，重试中...')
                             sleep(3)
                             i -= 1
                             continue
@@ -392,10 +379,35 @@ def set_favorite_all():
                                                 '视频之前已收藏过。')
 
 
+def up_get_cover():
+    file_path = filedialog.askopenfilename(title=u'选择文件',
+                                           initialdir='./')
+    var_up_cover_path.set(file_path)
+
+
+def up_get_video():
+    file_path = filedialog.askopenfilename(title=u'选择文件',
+                                           initialdir='./')
+    var_up_video_path.set(file_path)
+
+
+def upload():
+    filename = video.video_upload(var_up_video_path, verify=verify)    # 上传封面
+    cover_url = video.video_cover_upload(var_up_cover_path, verify=verify)
+    data["cover"] = cover_url
+    data["videos"][0]["filename"] = filename
+
+    result = video.video_submit(data, verify=ver)
+    tk.messagebox.showinfo(message='av' + str(result))
+
 #  ---------------------------------main window--------------------------------------------------------#
 
 
 def main_window():
+    window = root
+    window.title('111')
+    window.geometry('1000x700')
+
     bili_img_1 = Image.open('1.png')
     render_1 = ImageTk.PhotoImage(bili_img_1)
     img_1 = tk.Label(window, image=render_1)
@@ -462,6 +474,36 @@ def main_window():
 
     progress = tk.Label(window, textvariable=var_progress, font=("微软雅黑", 14, "bold"), height=1)
     progress.place(x=20, y=650)
+
+    sep3 = tk.Canvas(window, width=10, height=250)
+    sep3.create_line(15, 0, 15, 300, width=10, fill='#1f1e33')
+    sep3.place(x=160, y=430)
+
+    label = tk.Label(window, text='上传视频: ', font=("微软雅黑", 14, "bold"), height=1)
+    label.place(x=210, y=430)
+
+    label = tk.Label(window, text='封面路径: ', font=("微软雅黑", 12), height=1)
+    label.place(x=180, y=470)
+    entry_sess = tk.Entry(window, textvariable=var_up_cover_path, font=('Arial', 14))
+    entry_sess.place(x=254, y=470)
+    button_c_s = tk.Button(window, text="封面图片浏览...",
+                           command=up_get_cover)
+    button_c_s.place(x=490, y=470)
+
+    label = tk.Label(window, text='视频路径: ', font=("微软雅黑", 12), height=1)
+    label.place(x=180, y=520)
+    entry_sess = tk.Entry(window, textvariable=var_up_video_path, font=('Arial', 14))
+    entry_sess.place(x=254, y=520)
+    button_c_s = tk.Button(window, text="视频浏览...",
+                           command=up_get_video)
+    button_c_s.place(x=490, y=520)
+    button_c_s = tk.Button(window, text="详细信息设置...",
+                           command=up_get_video)
+    button_c_s.place(x=200, y=580)
+    button_c_s = tk.Button(window, text="上传", width=10,
+                           font=("微软雅黑", 14, "bold"),
+                           command=upload)
+    button_c_s.place(x=400, y=580)
 
     window.mainloop()
 
