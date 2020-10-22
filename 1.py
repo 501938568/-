@@ -101,17 +101,17 @@ def up_confirm():
                               font=("微软雅黑", 20, "bold"), height=1)
         label_temp.place(x=50, y=275)
 
-        v_list = user.get_videos_g(uid=var_upid.get(), verify=ver)
-        if v_list is None:
+        v_list_g = user.get_videos_g(uid=var_upid.get(), verify=ver)
+        if not v_list_g:
             label_temp = tk.Label(info_window, text="该up尚未投稿哦~ ",
                                   font=("微软雅黑", 14), height=1)
             label_temp.place(x=350, y=450)
         else:
             lb = tk.Listbox(info_window, width=40, height=20)
-
- #todo: 等待修改
-            for i in v_list:
-                lb.insert('end', str(i) + '.' + v_list['title'])
+            v_list = list(v_list_g)
+            #todo: 可以迭代器
+            for i in range(len(v_list)):
+                lb.insert('end', str(i) + '.' + v_list[i]['title'])
 
             def open_url(event):
                 temp = lb.curselection()[0]
