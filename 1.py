@@ -202,11 +202,14 @@ def video_confirm():
         info_window.mainloop()
 
 
-def update_progress(cur, total, msg='normal'):
+def update_progress(cur, total=-1, msg='normal'):
     if msg == 'normal':
-        var_progress.set('处理进度：' + str(cur) + '/' + str(total))
-        if cur == total:
-            var_progress.set('处理完毕！')
+        if total != -1:
+            var_progress.set('处理进度：' + str(cur) + '/' + str(total))
+            if cur == total:
+                var_progress.set('处理完毕！')
+        else:
+            var_progress.set('处理进度：' + str(cur))
     else:
         var_progresss.set(msg)
 
@@ -220,12 +223,12 @@ def b_set_like():
 
 def set_like_all(uid):
     try:
-        v_list = user.get_videos(uid=uid, verify=ver)
+        v_list = list(user.get_videos_g(uid=uid, verify=ver))
     except exceptions.BilibiliException as msg:
         if msg.code == -400 or -10:
             tkinter.messagebox.showwarning(message='up主id错误！')
     else:
-        if v_list is None:
+        if not v_list:
             tkinter.messagebox.showwarning(message='该up主未投稿！')
         else:
             is_liked = 0
@@ -239,7 +242,7 @@ def set_like_all(uid):
                     liked += 1
 
                 update_progress(i + 1, len(v_list))
-                window.update()
+                root.update()
 
             tkinter.messagebox.showinfo(message='之前已点赞：' + str(is_liked)
                                                 + '      本次点赞：' + str(liked))
@@ -261,15 +264,15 @@ def b_add_coin():
 
 def add_coin_all(uid):
     try:
-        v_list = user.get_videos(uid=uid, verify=ver)
+        v_list = user.get_videos_g(uid=uid, verify=ver)
     except exceptions.BilibiliException as msg:
         if msg.code == -400 or -10:
             tkinter.messagebox.showwarning(message='up主id错误！')
     else:
-        if v_list is None:
+        if not v_list:
             tkinter.messagebox.showwarning(message='该up主未投稿！')
         else:
-            count = len(v_list)
+            count = len(list(v_list))
             money = user.get_self_info(ver)['money']
             ans = tk.messagebox.askyesno('提示', '视频总数：' + str(count)
                                          + '       硬币总数：' + str(money)
@@ -280,7 +283,7 @@ def add_coin_all(uid):
                 coin = 0
                 filled = 0
                 for i in range(count):
-                    bvid = v_list[i]['bvid']
+                    bvid = list(v_list)[i]['bvid']
                     try:
                         video.add_coins(bvid=bvid, verify=ver, num=1)
                     except exceptions.BilibiliApiException as msg:
@@ -349,12 +352,12 @@ def set_favorite_all():
     dic = video.get_favorite_list(bvid=var_bvid.get(), verify=ver)
     temp = lb.curselection()[0]
     try:
-        v_list = user.get_videos(uid=var_upid.get(), verify=ver)
+        v_list = list(user.get_videos_g(uid=var_upid.get(), verify=ver))
     except exceptions.BilibiliException as msg:
         if msg.code == -400 or -10:
             tkinter.messagebox.showwarning(message='up主id错误！')
     else:
-        if v_list is None:
+        if not v_list:
             tkinter.messagebox.showwarning(message='该up主未投稿！')
         else:
             is_favared = 0
@@ -391,6 +394,94 @@ def up_get_video():
     var_up_video_path.set(file_path)
 
 
+def upload_detail():
+    detail_window = tk.Toplevel()
+    detail_window.title('上传详细设置')
+    detail_window.geometry('400x400')
+
+    var_origin = tk.IntVar(0)
+    var_reprint = tk.IntVar(0)
+
+    def origin():
+        if var_origin.get() == 1:
+            del data["source"]
+            entry_source.config(state=tk.DISABLED)
+        if var_origin.get() == 2:
+            entry_source.config(state=tk.NORMAL)
+            data["source"] = ''
+
+    radio1 = tk.Checkbutton(detail_window, text="原创视频（若为转载请写明来源）",
+                            onvalue=1, offvalue=2, variable=var_origin,
+                            command=origin)
+    radio1.place(x=20, y=20)
+
+    label_source = tk.Label(detail_window, text='来源:')
+    label_source.place(x=20, y=50)
+    entry_source = tk.Entry(detail_window, width=20)  # 设置1
+    entry_source.place(x=65, y=50)
+
+    label_title = tk.Label(detail_window, text='标题:')
+    label_title.place(x=20, y=100)
+    entry_title = tk.Entry(detail_window, width=20)  # 设置2
+    entry_title.place(x=65, y=100)
+
+    label_tag = tk.Label(detail_window, text='标签:')
+    label_tag.place(x=20, y=150)
+    entry_tag = tk.Entry(detail_window)  # 设置3
+    entry_tag.place(x=65, y=150)
+    label_tag = tk.Label(detail_window, text='(不同标签用英文半角逗号“,”隔开)')
+    label_tag.place(x=20, y=170)
+
+    label_des = tk.Label(detail_window, text='描述：', font=("微软雅黑", 12, "bold"))
+    label_des.place(x=20, y=200)
+    describe = scrolledtext.ScrolledText(detail_window, font=("微软雅黑", 10),
+                                         width=45, height=6)
+    describe.place(x=20, y=225)  # 设置4
+
+    radio2 = tk.Checkbutton(detail_window, text="不允许转载",
+                            variable=var_reprint)
+    radio2.place(x=250, y=20)   # 设置5
+
+    def upload_detail_confirm():
+        if var_origin.get() == 2:
+            data["source"] = entry_source.get()  # 1
+
+        lack = ''
+        if entry_title.get() == '':
+            lack += "标题 "
+        else:
+            data["title"] = entry_title.get()  # 2
+
+        if entry_tag.get() == '':
+            lack += "标签 "
+        else:
+            data["tag"] = entry_tag.get()  # 3
+
+        if describe.get() == '':
+            lack += "描述 "
+        else:
+            data["desc"] = describe.get()  # 4
+
+        data["no_reprint"] = var_reprint.get()  # 5
+
+        # todo: 分区id
+        if lack == '':
+            tk.messagebox.showinfo(msg='设置完成！')
+            detail_window.destroy()
+        elif tk.messagebox.askyesno(msg='缺少内容：' + lack + '\n' +
+                                        '确定完成修改吗？'):
+            detail_window.destroy()
+        else:
+            return
+
+    button_confirm = tk.Button(detail_window, text="确定", padx=30,
+                               font=("微软雅黑", 12, "bold"),
+                               command=upload_detail_confirm)
+    button_confirm.place(x=145, y=350)
+
+    detail_window.mainloop()
+
+
 def upload():
     filename = video.video_upload(var_up_video_path, verify=verify)    # 上传封面
     cover_url = video.video_cover_upload(var_up_cover_path, verify=verify)
@@ -406,7 +497,7 @@ def upload():
 def main_window():
     window = root
     window.title('111')
-    window.geometry('1000x700')
+    window.geometry('1000x800')
 
     bili_img_1 = Image.open('1.png')
     render_1 = ImageTk.PhotoImage(bili_img_1)
@@ -473,7 +564,7 @@ def main_window():
     sep3.place(x=0, y=400)
 
     progress = tk.Label(window, textvariable=var_progress, font=("微软雅黑", 14, "bold"), height=1)
-    progress.place(x=20, y=650)
+    progress.place(x=20, y=730)
 
     sep3 = tk.Canvas(window, width=10, height=250)
     sep3.create_line(15, 0, 15, 300, width=10, fill='#1f1e33')
@@ -498,7 +589,7 @@ def main_window():
                            command=up_get_video)
     button_c_s.place(x=490, y=520)
     button_c_s = tk.Button(window, text="详细信息设置...",
-                           command=up_get_video)
+                           command=upload_detail)
     button_c_s.place(x=200, y=580)
     button_c_s = tk.Button(window, text="上传", width=10,
                            font=("微软雅黑", 14, "bold"),
