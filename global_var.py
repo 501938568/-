@@ -22,9 +22,9 @@ var_up_video_path = tk.StringVar()
 # 投稿默认信息
 data = {
     "copyright": 1,
-    "source": "类型为转载时注明转载来源，为自制时删除此键",
+    "source": "",
     "cover": '',
-    "desc": "无端迫害",
+    "desc": "",
     "desc_format_id": 0,
     "dynamic": "",
     "interactive": 0,
@@ -35,7 +35,7 @@ data = {
     },
     "tag": "",
     "tid": 22,
-    "title": "请问您今天要来点哲♂学吗",
+    "title": "",
     "videos": [
         {
             "desc": "",
