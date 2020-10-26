@@ -1,5 +1,5 @@
 from global_var import *
-from bilibili_api import video, Verify, exceptions, user
+from bilibili_api import video, Verify, exceptions, user, utils
 
 import tkinter as tk
 from tkinter import scrolledtext, filedialog
@@ -10,6 +10,8 @@ import requests as req
 from io import BytesIO
 from selenium import webdriver
 import webbrowser
+import os
+import json
 
 from time import sleep
 import re
@@ -109,7 +111,7 @@ def up_confirm():
         else:
             lb = tk.Listbox(info_window, width=40, height=20)
             v_list = list(v_list_g)
-            #todo: 可以迭代器
+            # todo: 可以迭代器
             for i in range(len(v_list)):
                 lb.insert('end', str(i) + '.' + v_list[i]['title'])
 
@@ -134,7 +136,7 @@ def up_confirm():
                 img_sel_display.place(x=350, y=250)
 
                 describe = scrolledtext.ScrolledText(info_window, font=("微软雅黑", 10),
-                                                     width=70, height=9)
+                                                      width=70, height=9)
                 describe.config(state=tk.NORMAL)
                 describe.insert(tk.INSERT, v_list[i]['description'])
                 describe.config(state=tk.DISABLED)
@@ -397,7 +399,7 @@ def up_get_video():
 def upload_detail():
     detail_window = tk.Toplevel()
     detail_window.title('上传详细设置')
-    detail_window.geometry('400x400')
+    detail_window.geometry('500x400')
 
     var_origin = tk.IntVar(0)
     var_reprint = tk.IntVar(0)
@@ -435,12 +437,47 @@ def upload_detail():
     label_des = tk.Label(detail_window, text='描述：', font=("微软雅黑", 12, "bold"))
     label_des.place(x=20, y=200)
     describe = scrolledtext.ScrolledText(detail_window, font=("微软雅黑", 10),
-                                         width=45, height=6)
+                                         width=55, height=6)
     describe.place(x=20, y=225)  # 设置4
 
     radio2 = tk.Checkbutton(detail_window, text="不允许转载",
                             variable=var_reprint)
     radio2.place(x=250, y=20)   # 设置5
+
+    # todo: 分区id
+    with open(os.path.join(utils.get_project_path(), "data/channel.json"), encoding="utf8") as f:
+        channel = json.loads(f.read())
+
+    label_des = tk.Label(detail_window, text='分区选择(子分区可以不选择)：', font=("微软雅黑", 10))
+    label_des.place(x=250, y=50)
+
+    channel_lb = tk.Listbox(detail_window, width=8, height=7)
+    for i in range(len(channel)):
+        channel_lb.insert('end', channel[i]['name'])
+
+    channel_lb.place(x=250, y=75)
+
+    cur = None
+    sub_cur = None
+
+    def sub_channel(self):
+        cur = channel_lb.curselection()[0]
+        sub_channel_lb = tk.Listbox(detail_window, width=13, height=7)
+        for i in range(len(channel[cur]['sub'])):
+            sub_channel_lb.insert('end', channel[cur]['sub'][i]['name']
+                                  ) # + '  tid:')
+                                 # + str(channel[cur]['sub'][i]['tid']))
+        sub_channel_lb.place(x=330, y=75)
+
+        # todo: bug
+        def sub_channel_sel(self):
+            sub_cur = sub_channel_lb.curselection()[0]
+
+        sub_channel_lb.bind(sequence='<<ListboxSelect>>',
+                            func=sub_channel_sel)
+
+    channel_lb.bind(sequence='<<ListboxSelect>>',
+                    func=sub_channel)
 
     def upload_detail_confirm():
         if var_origin.get() == 2:
@@ -457,22 +494,24 @@ def upload_detail():
         else:
             data["tag"] = entry_tag.get()  # 3
 
-        if describe.get() == '':
+        if describe.get("0.0", tk.END) == '':
             lack += "描述 "
         else:
-            data["desc"] = describe.get()  # 4
+            data["desc"] = describe.get("0.0", tk.END)  # 4
 
         data["no_reprint"] = var_reprint.get()  # 5
 
-        # todo: 分区id
         if lack == '':
-            tk.messagebox.showinfo(msg='设置完成！')
-            detail_window.destroy()
-        elif tk.messagebox.askyesno(msg='缺少内容：' + lack + '\n' +
-                                        '确定完成修改吗？'):
+            tk.messagebox.showinfo(message='设置完成！')
             detail_window.destroy()
         else:
-            return
+            resp = tk.messagebox.askyesno(message='缺少内容：'
+                                                  + lack + '\n' +
+                                                  '确定完成修改吗？')
+            if resp:
+                detail_window.destroy()
+            else:
+                pass
 
     button_confirm = tk.Button(detail_window, text="确定", padx=30,
                                font=("微软雅黑", 12, "bold"),
@@ -497,7 +536,7 @@ def upload():
 def main_window():
     window = root
     window.title('111')
-    window.geometry('1000x800')
+    window.geometry('1000x700')
 
     bili_img_1 = Image.open('1.png')
     render_1 = ImageTk.PhotoImage(bili_img_1)
