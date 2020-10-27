@@ -444,7 +444,7 @@ def upload_detail():
                             variable=var_reprint)
     radio2.place(x=250, y=20)   # 设置5
 
-    # todo: 分区id
+
     with open(os.path.join(utils.get_project_path(), "data/channel.json"), encoding="utf8") as f:
         channel = json.loads(f.read())
 
@@ -464,21 +464,27 @@ def upload_detail():
         cur = channel_lb.curselection()[0]
         sub_channel_lb = tk.Listbox(detail_window, width=13, height=7)
         for i in range(len(channel[cur]['sub'])):
-            sub_channel_lb.insert('end', channel[cur]['sub'][i]['name']
-                                  ) # + '  tid:')
-                                 # + str(channel[cur]['sub'][i]['tid']))
+            sub_channel_lb.insert('end', channel[cur]['sub'][i]['name'])
         sub_channel_lb.place(x=330, y=75)
 
-        # todo: bug
-        def sub_channel_sel(self):
-            sub_cur = sub_channel_lb.curselection()[0]
+        sub_channel_lb.insert(0, '以大分区提交...')
 
+        def sub_channel_sel(self):
+            sub_cur = sub_channel_lb.curselection()[0] - 1
+            try:
+                a = channel[cur]['sub'][sub_cur]['tid']
+            except KeyError:
+                tkinter.messagebox.showwarning(message="tid获取失败，重试或以大分区投稿！")
+
+        sub_channel_lb.config(exportselection=False)
         sub_channel_lb.bind(sequence='<<ListboxSelect>>',
                             func=sub_channel_sel)
 
+    channel_lb.config(exportselection=False)
     channel_lb.bind(sequence='<<ListboxSelect>>',
-                    func=sub_channel)
+                    func=sub_channel)  # 设置6
 
+# --------------- confirm button ----------------
     def upload_detail_confirm():
         if var_origin.get() == 2:
             data["source"] = entry_source.get()  # 1
@@ -501,6 +507,15 @@ def upload_detail():
 
         data["no_reprint"] = var_reprint.get()  # 5
 
+        if cur is None:
+            lack += "投稿分区 "
+        else:
+            if sub_cur is None or sub_cur == -1:
+                data['tid'] = channel[cur]['tid']
+            else:
+                data['tid'] = channel[cur]['sub'][sub_cur]['tid']
+        # 6
+
         if lack == '':
             tk.messagebox.showinfo(message='设置完成！')
             detail_window.destroy()
@@ -512,6 +527,8 @@ def upload_detail():
                 detail_window.destroy()
             else:
                 pass
+
+# --------------------------------------------------
 
     button_confirm = tk.Button(detail_window, text="确定", padx=30,
                                font=("微软雅黑", 12, "bold"),
