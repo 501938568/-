@@ -214,6 +214,7 @@ def update_progress(cur, total=-1, msg='normal'):
             var_progress.set('处理进度：' + str(cur))
     else:
         var_progresss.set(msg)
+    root.update()
 
 
 def b_set_like():
@@ -244,7 +245,6 @@ def set_like_all(uid):
                     liked += 1
 
                 update_progress(i + 1, len(v_list))
-                root.update()
 
             tkinter.messagebox.showinfo(message='之前已点赞：' + str(is_liked)
                                                 + '      本次点赞：' + str(liked))
@@ -472,7 +472,7 @@ def upload_detail():
         def sub_channel_sel(self):
             sub_cur = sub_channel_lb.curselection()[0] - 1
             try:
-                a = channel[cur]['sub'][sub_cur]['tid']
+                data["tid"] = channel[cur]['sub'][sub_cur]['tid']
             except KeyError:
                 tkinter.messagebox.showwarning(message="tid获取失败，重试或以大分区投稿！")
 
@@ -507,8 +507,9 @@ def upload_detail():
 
         data["no_reprint"] = var_reprint.get()  # 5
 
+
         if cur is None:
-            lack += "投稿分区 "
+            lack += ''# "投稿分区 "
         else:
             if sub_cur is None or sub_cur == -1:
                 data['tid'] = channel[cur]['tid']
@@ -538,14 +539,29 @@ def upload_detail():
     detail_window.mainloop()
 
 
+def on_progress(up_data):
+    if up_data["data"] is not None:
+        event = up_data["event"]
+        update_progress(msg=f"{event}：失败")
+    else:
+        update_progress(msg=f"{event}：成功")
+
+
+
 def upload():
-    filename = video.video_upload(var_up_video_path, verify=verify)    # 上传封面
-    cover_url = video.video_cover_upload(var_up_cover_path, verify=verify)
+    filename = video.video_upload(var_up_video_path.get(),
+                                  verify=ver,
+                                  on_progress=on_progress)    # 上传封面
+
+    cover_url = video.video_cover_upload(var_up_cover_path.get(), verify=ver)
     data["cover"] = cover_url
     data["videos"][0]["filename"] = filename
-
-    result = video.video_submit(data, verify=ver)
-    tk.messagebox.showinfo(message='av' + str(result))
+    try:
+        result = video.video_submit(data, verify=ver)
+    except Exception as e:
+        if hasattr(e, 'code'):
+            update_progress(msg=str(e.code) + "：" + e.msg)
+    tk.messagebox.showinfo(message=str(result))
 
 #  ---------------------------------main window--------------------------------------------------------#
 
@@ -620,10 +636,10 @@ def main_window():
     sep3.place(x=0, y=400)
 
     progress = tk.Label(window, textvariable=var_progress, font=("微软雅黑", 14, "bold"), height=1)
-    progress.place(x=20, y=730)
+    progress.place(x=20, y=660)
 
     sep3 = tk.Canvas(window, width=10, height=250)
-    sep3.create_line(15, 0, 15, 300, width=10, fill='#1f1e33')
+    sep3.create_line(15, 0, 15, 200, width=10, fill='#1f1e33')
     sep3.place(x=160, y=430)
 
     label = tk.Label(window, text='上传视频: ', font=("微软雅黑", 14, "bold"), height=1)
